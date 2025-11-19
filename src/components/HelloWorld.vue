@@ -1,26 +1,23 @@
 <script setup lang="ts">
 import { useAsyncRequest } from '../composables/useRestApi.ts'
-import { getRequest, postRequest } from '../api.ts';
 import { useUsersStore, type User } from '../stores/users';
 
 defineProps<{ msg: string }>()
 
 const usersStore = useUsersStore();
 
-const { loading, error, run: fetchUsers } = useAsyncRequest<User[]>(
-  () => getRequest('/users/'), 
-  { 
-    autoRun: false, 
-    storeSetter: usersStore.setUsers
-  }
-)
+const { loading, error, run: fetchUsers } = useAsyncRequest<User[]>({
+  method: 'GET',
+  path: '/users/',
+  autoRun: false, 
+  storeSetter: usersStore.setUsers
+})
 
-const { loading: postLoading, error: postError, run: createPost } = useAsyncRequest<{ id: number; title: string; body: string; userId: number }>(
-  (payload) => postRequest('/posts', payload),
-  { 
-    autoRun: false
-  }
-)
+const { loading: postLoading, error: postError, run: createPost } = useAsyncRequest<{ id: number; title: string; body: string; userId: number }>({
+  method: 'POST',
+  path: '/posts',
+  autoRun: false
+})
 
 const handleCreatePost = () => {
   createPost({
