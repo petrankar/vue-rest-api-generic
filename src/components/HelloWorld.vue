@@ -1,41 +1,56 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useAsyncRequest } from '../composables/useRestApi.ts'
+import { getRequest, postRequest } from '../api.ts';
+import { useUsersStore, type User } from '../stores/users';
 
 defineProps<{ msg: string }>()
 
-const count = ref(0)
+const usersStore = useUsersStore();
+
+const { loading, error, run: fetchUsers } = useAsyncRequest<User[]>(
+  () => getRequest('/users/'), 
+  { 
+    autoRun: false, 
+    storeSetter: usersStore.setUsers
+  }
+)
+
+const { loading: postLoading, error: postError, run: createPost } = useAsyncRequest<{ id: number; title: string; body: string; userId: number }>(
+  (payload) => postRequest('/posts', payload),
+  { 
+    autoRun: false
+  }
+)
+
+const handleCreatePost = () => {
+  createPost({
+    title: 'foo',
+    body: 'bar',
+    userId: 1,
+  })
+}
+
+
 </script>
 
 <template>
   <h1>{{ msg }}</h1>
+  
+  <button @click="fetchUsers">Fetch Users</button>
+  <button @click="handleCreatePost">Create Post</button>
 
-  <div class="card">
-    <button type="button" @click="count++">count is {{ count }}</button>
-    <p>
-      Edit
-      <code>components/HelloWorld.vue</code> to test HMR
-    </p>
-  </div>
+  <div v-if="loading">Loading users...</div>
+  <div v-if="error">Error: {{ error }}</div>
 
-  <p>
-    Check out
-    <a href="https://vuejs.org/guide/quick-start.html#local" target="_blank"
-      >create-vue</a
-    >, the official Vue + Vite starter
-  </p>
-  <p>
-    Learn more about IDE Support for Vue in the
-    <a
-      href="https://vuejs.org/guide/scaling-up/tooling.html#ide-support"
-      target="_blank"
-      >Vue Docs Scaling up Guide</a
-    >.
-  </p>
-  <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
+  <div v-if="postLoading">Creating post...</div>
+  <div v-if="postError">Post Error: {{ postError }}</div>
+  
+  <ul v-if="usersStore.users.length > 0">
+    <li v-for="user in usersStore.users" :key="user.id">
+      {{ user.name }}
+    </li>
+  </ul>
+
 </template>
 
-<style scoped>
-.read-the-docs {
-  color: #888;
-}
-</style>
+
